@@ -7,7 +7,7 @@
             <h3 class="card-title">Users List</h3>
 
             <div class="card-tools">
-              <button class="btn btn-success" data-toggle="modal" data-target="#addNewUser">
+              <button class="btn btn-success" @click="newModel()">
                 <i class="fa fa-user-plus"></i>
               </button>
             </div>
@@ -33,13 +33,13 @@
                   <td>{{user.type | uptext}}</td>
                   <th>{{user.created_at | humantime}}</th>
                   <td>
-                    <a href="#">
+                    <button @click="editModel(user)">
                       <i class="fa fa-edit blue"></i>
-                    </a>
+                    </button>
                     /
-                    <a href="#">
+                    <button @click="deleteUser(user.id)">
                       <i class="fa fa-trash red"></i>
-                    </a>
+                    </button>
                   </td>
                 </tr>
               </tbody>
@@ -61,12 +61,15 @@
       <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="addNewUserLabel">Add New User</h5>
+            <h5
+              class="modal-title"
+              id="addNewUserLabel"
+            >{{ isEditMode ? 'Edit User' : 'Add New User' }}</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
-          <form @submit.prevent="createUser">
+          <form @submit.prevent="isEditMode ? updateUser() : createUser()">
             <div class="modal-body">
               <div class="form-group">
                 <label>Username</label>
@@ -133,7 +136,10 @@
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
-              <button type="submit" class="btn btn-primary">Create User</button>
+              <button
+                type="submit"
+                class="btn btn-primary"
+              >{{ isEditMode ? 'Save' : 'Create User' }}</button>
             </div>
           </form>
         </div>
@@ -146,6 +152,8 @@
 export default {
   data() {
     return {
+      userBeingEdited: "",
+      isEditMode: false,
       form: new Form({
         name: "",
         email: "",
@@ -160,21 +168,88 @@ export default {
     this.loadUsers();
   },
   methods: {
+    newModel() {
+      this.isEditMode = false;
+      this.form.reset();
+      $("#addNewUser").modal("show");
+    },
+    editModel(user) {
+      this.isEditMode = true;
+      this.userBeingEdited = user.id;
+      this.form.reset();
+      $("#addNewUser").modal("show");
+      this.form.fill(user);
+    },
     createUser() {
       this.$Progress.start();
-      this.form.post("api/user");
-      $('#addNewUser').modal('hide');
-      toast.fire({
-        type: "success",
-        title: "User created successfully"
-      });
-      this.$Progress.finish();
-      this.loadUsers();
+      this.form
+        .post("api/user")
+        .then(() => {
+          toast.fire({
+            type: "success",
+            title: "User created successfully"
+          });
+
+          this.$Progress.finish();
+
+          this.loadUsers();
+        })
+        .catch(() => {
+          this.$Progress.fail();
+        });
+    },
+    updateUser() {
+      this.$Progress.start();
+      this.form
+        .put("api/user/" + this.userBeingEdited, this.form)
+        .then(() => {
+          this.loadUsers();
+          toast.fire({
+            type: "success",
+            title: "User updated successfully"
+          });
+          this.$Progress.finish();
+        })
+        .catch(() => {
+          toast.fire({
+            type: "warning",
+            title: "An Error Occured"
+          });
+          this.$Progress.fail();
+        });
     },
     loadUsers() {
+      $("#addNewUser").modal("hide");
       axios.get("api/user").then(data => {
         this.users = data.data.data;
       });
+    },
+    deleteUser(userId) {
+      swal
+        .fire({
+          title: "Are you sure?",
+          text: "You won't be able to revert this!",
+          type: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#3085d6",
+          cancelButtonColor: "#d33",
+          confirmButtonText: "Yes, delete it!"
+        })
+        .then(result => {
+          if (result.dismiss) {
+            return;
+          }
+          // Send Request to the server
+          this.form
+            .delete("api/user/" + userId)
+            .then(serverResult => {
+              swal.fire("Deleted!", "Your file has been deleted.", "success");
+              this.loadUsers();
+            })
+            .catch(() => {
+              swal.fire("Failed!", "Something went wrong", "warning");
+            });
+        });
     }
   }
 };

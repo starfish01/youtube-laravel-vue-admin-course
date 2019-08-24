@@ -29624,3 +29624,9 @@ readers do not read off random characters that represent icons */
   color: white !important;
 }
 
+button {
+  background: none;
+  border: none;
+  padding: 0;
+}
+
