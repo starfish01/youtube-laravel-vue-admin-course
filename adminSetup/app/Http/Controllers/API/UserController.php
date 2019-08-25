@@ -28,7 +28,10 @@ class UserController extends Controller
      */
     public function index()
     {
-        return User::latest()->paginate(10);
+        // $this->authorize('isAdmin');
+        if (\Gate::allows('isAdmin') || \Gate::allows('isAuthor')) {
+            return User::latest()->paginate(5);
+        }
     }
 
     /**
@@ -97,7 +100,9 @@ class UserController extends Controller
 
         $currentPhoto = $user->photo;
         if ($request->photo != $currentPhoto) {
-            $name = time() . '.' . explode('/', explode(':', substr($request->photo, 0, strpos($request->photo, ';')))[1])[1];
+            $user_details = 'ID_' . $user->id . '_' . $user->email . '_';
+
+            $name = $user_details . time() . '.' . explode('/', explode(':', substr($request->photo, 0, strpos($request->photo, ';')))[1])[1];
             \Image::make($request->photo)->save(public_path('img/profile/') . $name);
             $request->merge(['photo' => $name]);
             $userPhoto = public_path('img/profile/') . $currentPhoto;
@@ -144,7 +149,30 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
+
+        $this->authorize('isAdmin');
+
         $user = User::findOrFail($id)->delete();
         return ['message' => 'User Deleted'];
     }
+
+    /**
+     * Search request.
+     *
+     * @param  string  $query
+     * @return \Illuminate\Http\Response
+     */
+    public function search(){
+        if ($search = \Request::get('q')) {
+            $users = User::where(function($query) use ($search){
+                $query->where('name','LIKE',"%$search%")
+                        ->orWhere('email','LIKE',"%$search%");
+            })->paginate(20);
+        }else{
+            $users = User::latest()->paginate(5);
+        }
+        return $users;
+    }
+
+
 }

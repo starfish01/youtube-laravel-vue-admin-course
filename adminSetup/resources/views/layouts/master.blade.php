@@ -33,9 +33,9 @@ scratch. This page gets rid of all links and provides the needed markup only.
             <!-- SEARCH FORM -->
             <form class="form-inline ml-3">
                 <div class="input-group input-group-sm">
-                    <input class="form-control form-control-navbar" type="search" placeholder="Search" aria-label="Search">
+                    <input class="form-control form-control-navbar" @keyup="searchit" v-model="search" type="search" placeholder="Search" aria-label="Search">
                     <div class="input-group-append">
-                        <button class="btn btn-navbar" type="submit">
+                        <button class="btn btn-navbar" @click="searchit" type="submit">
                             <i class="fas fa-search"></i>
                         </button>
                     </div>
@@ -62,7 +62,8 @@ scratch. This page gets rid of all links and provides the needed markup only.
                         <img src="./img/profile.svg" class="img-circle elevation-2" alt="User Image">
                     </div>
                     <div class="info">
-                        <a href="#" class="d-block">{{ Auth::user()->name }}</a>
+                        <a href="/profile" class="d-block">{{ Auth::user()->name }}</a>
+                        <p style="color:white">{{ Auth::user()->type }}</p>
                     </div>
                 </div>
 
@@ -82,7 +83,7 @@ scratch. This page gets rid of all links and provides the needed markup only.
                         </li>
 
 
-
+                        @can('isAdmin')
                         <li class="nav-item has-treeview ">
                             <a href="#" class="nav-link ">
                                 <i class="nav-icon fas fa-cog"></i>
@@ -100,21 +101,22 @@ scratch. This page gets rid of all links and provides the needed markup only.
                             </ul>
                         </li>
 
+                        <li class="nav-item">
+                            <router-link to="/developer" class="nav-link">
+                                <i class="nav-icon fas fa-cogs"></i>
+                                <p>
+                                    Developer
+                                </p>
+                            </router-link>
+                        </li>
+                        @endcan
+
 
                         <li class="nav-item">
                             <router-link to="/profile" class="nav-link">
                                 <i class="nav-icon fas fa-user"></i>
                                 <p>
                                     Profile
-                                </p>
-                            </router-link>
-                        </li>
-
-                        <li class="nav-item">
-                            <router-link to="/developer" class="nav-link">
-                                <i class="nav-icon fas fa-cogs"></i>
-                                <p>
-                                    Developer
                                 </p>
                             </router-link>
                         </li>
@@ -161,6 +163,12 @@ scratch. This page gets rid of all links and provides the needed markup only.
         </footer>
     </div>
     <!-- ./wrapper -->
+
+    @auth
+    <script>
+        window.user = @json(auth()->user())
+    </script>
+    @endauth
 
     <script src="/js/app.js"></script>
 

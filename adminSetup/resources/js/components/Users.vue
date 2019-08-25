@@ -1,6 +1,10 @@
 <template>
   <div class="container">
-    <div class="row">
+    <div v-if="!$gate.isAdminOrAuthor()">
+      <not-found></not-found>
+    </div>
+
+    <div class="row" v-if="$gate.isAdminOrAuthor()">
       <div class="col-md-12 mt-5">
         <div class="card">
           <div class="card-header">
@@ -26,7 +30,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="user in users" v-bind:key="user.id">
+                <tr v-for="user in users.data" v-bind:key="user.id">
                   <td>{{user.id}}</td>
                   <td>{{user.name | uptext}}</td>
                   <td>{{user.email}}</td>
@@ -44,6 +48,12 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+          <div class="card-footer">
+            <pagination @pagination-change-page="getResults" :data="users">
+              <span slot="prev-nav">&lt; Previous</span>
+              <span slot="next-nav">Next &gt;</span>
+            </pagination>
           </div>
           <!-- /.card-body -->
         </div>
@@ -116,7 +126,7 @@
                 >
                   <option value>-- Select --</option>
                   <option value="admin">Admin</option>
-                  <option value="standard_user">Standard User</option>
+                  <option value="user">Standard User</option>
                   <option value="author">Author</option>
                 </select>
                 <has-error :form="form" field="type"></has-error>
@@ -166,12 +176,25 @@ export default {
   },
   created() {
     this.loadUsers();
+    Fire.$on('searching',()=>{
+        let query = this.$parent.search;
+        axios.get('api/findUser?q='+ query).then((data)=>{
+            this.users = data.data
+        }).catch(()=>{
+
+        });
+    })
   },
   methods: {
     newModel() {
       this.isEditMode = false;
       this.form.reset();
       $("#addNewUser").modal("show");
+    },
+    getResults(page = 1) {
+      axios.get("api/user?page=" + page).then(response => {
+        this.users = response.data;
+      });
     },
     editModel(user) {
       this.isEditMode = true;
@@ -219,9 +242,12 @@ export default {
         });
     },
     loadUsers() {
+      if (!this.$gate.isAdminOrAuthor()) {
+        return;
+      }
       $("#addNewUser").modal("hide");
-      axios.get("api/user").then(data => {
-        this.users = data.data.data;
+      axios.get("api/user").then(({data}) => {
+        this.users = data;
       });
     },
     deleteUser(userId) {
