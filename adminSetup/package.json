@@ -29,7 +29,7 @@
         "gulp": "^4.0.2",
         "gulp-sass": "^4.0.2",
         "laravel-vue-pagination": "^2.3.0",
-        "moment": "^2.24.0",
+        "moment": "^2.29.2",
         "sweetalert2": "^8.16.3",
         "vform": "^1.0.1",
         "vue-progressbar": "^0.7.5",
